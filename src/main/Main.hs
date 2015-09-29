@@ -306,6 +306,17 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
                               dockerCleanupCmd
                               dockerCleanupOptsParser)
              addSubCommands
+                ConfigCmd.cfgCmdName
+                "Subcommands specific to modifying stack.yaml files"
+                (do addCommand ConfigCmd.cfgSet
+                               "Set the field to the value"
+                               cfgSetCmd
+                               (many (textArgument
+                                     (metavar "Value3" <> 
+                                     help ("Set this to global-stack yaml"))
+                                     ))
+                    )
+             addSubCommands
                Image.imgCmdName
                "Subcommands specific to imaging (EXPERIMENTAL)"
                (addCommand Image.imgDockerCmdName
