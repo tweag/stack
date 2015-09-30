@@ -65,6 +65,7 @@ import           Stack.Ghci
 import           Stack.GhcPkg (getGlobalDB, mkGhcPackagePath)
 import           Stack.SDist (getSDistTarball)
 import           Stack.Setup
+import qualified Stack.Sig as Sig
 import           Stack.Solver (solveExtraDeps)
 import           Stack.Types
 import           Stack.Types.Internal
@@ -256,9 +257,12 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
              addCommand "upload"
                         "Upload a package to Hackage"
                         uploadCmd
-                        ((,)
+                        ((,,)
                          <$> (many $ strArgument $ metavar "TARBALL/DIR")
-                         <*> optional pvpBoundsOption)
+                         <*> optional pvpBoundsOption
+                         <*> flag False True
+                              (long "sign" <>
+                               help "GPG sign & submit signature"))
              addCommand "sdist"
                         "Create source distribution tarballs"
                         sdistCmd
@@ -350,7 +354,18 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
                (addCommand Image.imgDockerCmdName
                 "Build a Docker image for the project"
                 imgDockerCmd
-                (pure ())))
+                (pure ()))
+             addSubCommands
+               Sig.sigCmdName
+               "Subcommands specific to package signatures (EXPERIMENTAL)"
+               (do addSubCommands
+                     Sig.sigSignCmdName
+                     "Sign a a single package or all your packages"
+                     (do addCommand
+                           Sig.sigSignSdistCmdName
+                           "Sign a single sdist package file"
+                           sigSignSdistCmd
+                           Sig.sigSignSdistOpts)))
      case eGlobalRun of
        Left (exitCode :: ExitCode) -> do
          when isInterpreter $
@@ -773,9 +788,9 @@ upgradeCmd (fromGit, repo) go = withConfigAndLock go $ globalFixCodePage go $
     upgrade (if fromGit then Just repo else Nothing) (globalResolver go)
 
 -- | Upload to Hackage
-uploadCmd :: ([String], Maybe PvpBounds) -> GlobalOpts -> IO ()
-uploadCmd ([], _) _ = error "To upload the current package, please run 'stack upload .'"
-uploadCmd (args, mpvpBounds) go = do
+uploadCmd :: ([String], Maybe PvpBounds, Bool) -> GlobalOpts -> IO ()
+uploadCmd ([], _, _) _ = error "To upload the current package, please run 'stack upload .'"
+uploadCmd (args, mpvpBounds, shouldSign) go = do
     let partitionM _ [] = return ([], [])
         partitionM f (x:xs) = do
             r <- f x
@@ -794,17 +809,22 @@ uploadCmd (args, mpvpBounds) go = do
                     Upload.setGetManager (return manager) $
                     Upload.defaultUploadSettings
             liftIO $ Upload.mkUploader config uploadSettings
+        sigServiceUrl = "https://sig.commercialhaskell.org/"
     if null dirs
         then withConfigAndLock go $ do
             uploader <- getUploader
             liftIO $ forM_ files (canonicalizePath >=> Upload.upload uploader)
         else withBuildConfigAndLock go $ \_ -> do
             uploader <- getUploader
-            liftIO $ forM_ files (canonicalizePath >=> Upload.upload uploader)
+            forM_ files (\f -> do liftIO (Upload.upload uploader f)
+                                  when shouldSign
+                                    (Sig.sign sigServiceUrl f))
             forM_ dirs $ \dir -> do
                 pkgDir <- parseAbsDir =<< liftIO (canonicalizePath dir)
                 (tarName, tarBytes) <- getSDistTarball mpvpBounds pkgDir
                 liftIO $ Upload.uploadBytes uploader tarName tarBytes
+                when shouldSign
+                  (Sig.signTarBytes sigServiceUrl tarName tarBytes)
 
 sdistCmd :: ([String], Maybe PvpBounds) -> GlobalOpts -> IO ()
 sdistCmd (dirs, mpvpBounds) go =
@@ -946,6 +966,13 @@ imgDockerCmd () go@GlobalOpts{..} = do
                          defaultBuildOpts
                  Image.stageContainerImageArtifacts)
         (Just Image.createContainerImageFromStage)
+
+sigSignSdistCmd :: (String, String) -> GlobalOpts -> IO ()
+sigSignSdistCmd (url,path) go = do
+    withConfigAndLock
+        go
+        (do (manager,lc) <- liftIO (loadConfigWithOpts go)
+            runStackTGlobal manager (lcConfig lc) go (Sig.sign url path))
 
 -- | Load the configuration with a manager. Convenience function used
 -- throughout this module.
