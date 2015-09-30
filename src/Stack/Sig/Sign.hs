@@ -109,7 +109,8 @@ signPackage url pkg filePath = do
     let (PackageIdentifier n v) = pkg
         name = show n
         version = show v
-    fingerprint <- GPG.verifyFile sig filePath >>= GPG.fullFingerprint
+    verify <- GPG.verifyFile sig filePath
+    fingerprint <- GPG.fullFingerprint verify
     req <-
         parseUrl
             (url <> "/upload/signature/" <> name <> "/" <> version <> "/" <>

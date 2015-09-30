@@ -36,11 +36,10 @@ import           Stack.Types
 cabalFilePackageId
     :: (MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
     => FilePath -> m PackageIdentifier
-cabalFilePackageId fp =
-    liftIO (D.readPackageDescription D.silent fp) >>=
-    toStackPI . D.package . D.packageDescription
+cabalFilePackageId fp = do
+    pkgDescr <- liftIO (D.readPackageDescription D.silent fp)
+    (toStackPI . D.package . D.packageDescription) pkgDescr
   where
-    toStackPI (D.PackageIdentifier (D.PackageName name) ver) = do
-        name' <- parsePackageNameFromString name
-        ver' <- parseVersionFromString (V.showVersion ver)
-        pure (PackageIdentifier name' ver')
+    toStackPI (D.PackageIdentifier (D.PackageName name) ver) =
+        PackageIdentifier <$> parsePackageNameFromString name <*>
+        parseVersionFromString (V.showVersion ver)
