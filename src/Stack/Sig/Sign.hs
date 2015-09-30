@@ -29,7 +29,8 @@ import qualified Data.Text as T
 import           Data.UUID (toString)
 import           Data.UUID.V4 (nextRandom)
 import           Network.HTTP.Conduit
-  (Response(..), RequestBody(..), Request(..), withManager, httpLbs)
+       (Response(..), RequestBody(..), Request(..), httpLbs, newManager,
+        tlsManagerSettings)
 import           Network.HTTP.Types (status200, methodPut)
 import           Path
 import           Path.IO
@@ -112,7 +113,8 @@ signPackage url pkg filePath = do
             { method = methodPut
             , requestBody = RequestBodyBS signature
             }
-    res <- withManager (httpLbs put)
+    mgr <- liftIO (newManager tlsManagerSettings)
+    res <- liftIO (httpLbs put mgr)
     when
         (responseStatus res /= status200)
         (throwM (GPGSignException "unable to sign & upload package"))
