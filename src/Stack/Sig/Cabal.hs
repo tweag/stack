@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
@@ -14,6 +15,10 @@ Portability : POSIX
 -}
 
 module Stack.Sig.Cabal (cabalFilePackageId) where
+
+#if __GLASGOW_HASKELL__ < 710
+import           Control.Applicative ((<$>), (<*>))
+#endif
 
 import           Control.Monad.Catch
 import           Control.Monad.IO.Class

@@ -1,3 +1,8 @@
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 {-|
 Module      : Stack.Sig
 Description : GPG Signatures for Stack
@@ -18,6 +23,10 @@ module Stack.Sig
        , sigSignSdistOpts
        )
        where
+
+#if __GLASGOW_HASKELL__ < 710
+import Control.Applicative ((<$>))
+#endif
 
 import Options.Applicative
 import Stack.Sig.GPG as Sig

@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 {-|
 Module      : Stack.Sig.Sign
@@ -14,6 +15,10 @@ Portability : POSIX
 -}
 
 module Stack.Sig.Sign (sign, signTarBytes) where
+
+#if __GLASGOW_HASKELL__ < 710
+import           Control.Applicative ((<$>))
+#endif
 
 import           Network.HTTP.Download
 import           Control.Monad (when)
