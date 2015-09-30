@@ -34,7 +34,7 @@ import           Stack.Types
 -- | Extract the @PackageIdentifier@ given an exploded haskell package
 -- path.
 cabalFilePackageId
-    :: (Applicative m, MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
+    :: (MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
     => FilePath -> m PackageIdentifier
 cabalFilePackageId fp =
     liftIO (D.readPackageDescription D.silent fp) >>=

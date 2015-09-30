@@ -12,7 +12,8 @@ Stability   : experimental
 Portability : POSIX
 -}
 
-module Stack.Sig.GPG (fullFingerprint, signPackage, verifyFile) where
+module Stack.Sig.GPG (fullFingerprint, signPackage, verifyFile)
+       where
 
 #if __GLASGOW_HASKELL__ < 710
 import           Control.Applicative ((<$>))
@@ -30,8 +31,9 @@ import           System.Process (readProcessWithExitCode)
 
 -- | Extract the full long @fingerprint@ given a short (or long)
 -- @fingerprint@
-fullFingerprint :: (Monad m, MonadIO m, MonadThrow m)
-                => Fingerprint -> m Fingerprint
+fullFingerprint
+    :: (Monad m, MonadIO m, MonadThrow m)
+    => Fingerprint -> m Fingerprint
 fullFingerprint (Fingerprint fp) = do
     (code,out,err) <-
         liftIO
@@ -58,8 +60,9 @@ fullFingerprint (Fingerprint fp) = do
                      find hasFingerprint (map words (lines out)))
 
 -- | Sign a file path with GPG, returning the @Signature@.
-signPackage :: (Monad m, MonadIO m, MonadThrow m)
-            => FilePath -> m Signature
+signPackage
+    :: (Monad m, MonadIO m, MonadThrow m)
+    => FilePath -> m Signature
 signPackage path = do
     (code,out,err) <-
         liftIO
@@ -80,8 +83,9 @@ signPackage path = do
 
 -- | Verify the @Signature@ of a file path returning the
 -- @Fingerprint@.
-verifyFile :: (Monad m, MonadIO m, MonadThrow m)
-           => Signature -> FilePath -> m Fingerprint
+verifyFile
+    :: (Monad m, MonadIO m, MonadThrow m)
+    => Signature -> FilePath -> m Fingerprint
 verifyFile (Signature signature) path = do
     let process = readProcessWithExitCode
                 "gpg"

@@ -47,8 +47,9 @@ import           System.Process (readProcessWithExitCode)
 
 -- | Sign a haskell package with the given url of the signature
 -- service and a path to a tarball.
-sign :: (Applicative m, MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
-     => String -> FilePath -> m ()
+sign
+    :: (MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
+    => String -> FilePath -> m ()
 sign url filePath = do
     withStackWorkTempDir
         (\tempDir ->
@@ -86,7 +87,7 @@ sign url filePath = do
 -- function will write the bytes to the path in a temp dir and sign
 -- the tarball with GPG.
 signTarBytes
-    :: (Applicative m, MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
+    :: (MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
     => String -> FilePath -> L.ByteString -> m ()
 signTarBytes url tarFile bs = do
     withStackWorkTempDir
@@ -100,7 +101,7 @@ signTarBytes url tarFile bs = do
 -- | Sign a haskell package given the url to the signature service, a
 -- @PackageIdentifier@ and a file path to the package on disk.
 signPackage
-    :: (Applicative m, MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
+    :: (MonadCatch m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadLogger m, MonadThrow m)
     => String -> PackageIdentifier -> FilePath -> m ()
 signPackage url pkg filePath = do
     $logInfo ("GPG signing " <> T.pack filePath)
@@ -124,8 +125,9 @@ signPackage url pkg filePath = do
         (responseStatus res /= status200)
         (throwM (GPGSignException "unable to sign & upload package"))
 
-withStackWorkTempDir :: (Applicative m, MonadCatch m, MonadIO m, MonadMask m, MonadLogger m)
-                     => (Path Rel Dir -> m ()) -> m ()
+withStackWorkTempDir
+    :: (MonadCatch m, MonadIO m, MonadMask m, MonadLogger m)
+    => (Path Rel Dir -> m ()) -> m ()
 withStackWorkTempDir f = do
     uuid <- liftIO nextRandom
     uuidPath <- parseRelDir (toString uuid)
