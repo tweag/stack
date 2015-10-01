@@ -275,6 +275,8 @@ data BuildConfig = BuildConfig
       --
       -- These dependencies will not be installed to a shared location, and
       -- will override packages provided by the resolver.
+    , bcExtraPackageDBs :: ![Path Abs Dir]
+      -- ^ Extra package databases
     , bcStackYaml  :: !(Path Abs File)
       -- ^ Location of the stack.yaml file.
       --
@@ -410,15 +412,17 @@ data Project = Project
     -- ^ Per-package flag overrides
     , projectResolver :: !Resolver
     -- ^ How we resolve which dependencies to use
+    , projectExtraPackageDBs :: ![FilePath]
     }
   deriving Show
 
 instance ToJSON Project where
     toJSON p = object
-        [ "packages"   .= projectPackages p
-        , "extra-deps" .= map fromTuple (Map.toList $ projectExtraDeps p)
-        , "flags"      .= projectFlags p
-        , "resolver"   .= projectResolver p
+        [ "packages"          .= projectPackages p
+        , "extra-deps"        .= map fromTuple (Map.toList $ projectExtraDeps p)
+        , "flags"             .= projectFlags p
+        , "resolver"          .= projectResolver p
+        , "extra-package-dbs" .= projectExtraPackageDBs p
         ]
 
 -- | How we resolve which dependencies to install given a set of packages.
@@ -898,6 +902,12 @@ packageDatabaseLocal = do
     root <- installationRootLocal
     return $ root </> $(mkRelDir "pkgdb")
 
+-- | Extra package databases
+packageDatabaseExtra :: (MonadThrow m, MonadReader env m, HasEnvConfig env) => m [Path Abs Dir]
+packageDatabaseExtra = do
+    bc <- asks getBuildConfig
+    return $ bcExtraPackageDBs bc
+
 -- | Directory for holding flag cache information
 flagCacheLocal :: (MonadThrow m, MonadReader env m, HasEnvConfig env) => m (Path Abs Dir)
 flagCacheLocal = do
@@ -973,11 +983,13 @@ instance (warnings ~ [JSONWarning]) => FromJSON (ProjectAndConfigMonoid, warning
         flags <- o ..:? "flags" ..!= mempty
         resolver <- jsonSubWarnings (o ..: "resolver")
         config <- parseConfigMonoidJSON o
+        extraPackageDBs <- o ..:? "extra-package-dbs" ..!= []
         let project = Project
                 { projectPackages = dirs
                 , projectExtraDeps = extraDeps
                 , projectFlags = flags
                 , projectResolver = resolver
+                , projectExtraPackageDBs = extraPackageDBs
                 }
         return $ ProjectAndConfigMonoid project config
       where
@@ -1123,6 +1135,8 @@ instance FromJSON (SetupInfo, [JSONWarning]) where
         tellJSONField "portable-git"
         return SetupInfo {..}
 
+-- | For @siGHCs@ and @siGHCJSs@ fields maps are deeply merged.
+-- For all fields the values from the last @SetupInfo@ win.
 instance Monoid SetupInfo where
     mempty =
         SetupInfo
@@ -1134,11 +1148,11 @@ instance Monoid SetupInfo where
         }
     mappend l r =
         SetupInfo
-        { siSevenzExe = siSevenzExe l <|> siSevenzExe r
-        , siSevenzDll = siSevenzDll l <|> siSevenzDll r
-        , siMsys2 = siMsys2 l <> siMsys2 r
-        , siGHCs = siGHCs l <> siGHCs r
-        , siGHCJSs = siGHCJSs l <> siGHCJSs r }
+        { siSevenzExe = siSevenzExe r <|> siSevenzExe l
+        , siSevenzDll = siSevenzDll r <|> siSevenzDll l
+        , siMsys2 = siMsys2 r <> siMsys2 l
+        , siGHCs = Map.unionWith (<>) (siGHCs r) (siGHCs l)
+        , siGHCJSs = Map.unionWith (<>) (siGHCJSs r) (siGHCJSs l) }
 
 -- | Remote or inline 'SetupInfo'
 data SetupInfoLocation
