@@ -83,7 +83,7 @@ sign url filePath = do
 
 -- | Sign a haskell package with the given url to the signature
 -- service, a package tarball path (package tarball name) and a lazy
--- bytestring of bytes that represent a the tarball bytestream.  The
+-- bytestring of bytes that represent the tarball bytestream.  The
 -- function will write the bytes to the path in a temp dir and sign
 -- the tarball with GPG.
 signTarBytes
