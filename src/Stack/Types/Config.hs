@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- | The Config type.
 
@@ -30,6 +31,7 @@ import           Data.Aeson.Extended
 import           Data.Attoparsec.Args
 import           Data.Binary (Binary)
 import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Char8 as S8
 import           Data.Either (partitionEithers)
 import           Data.List (stripPrefix)
@@ -61,6 +63,7 @@ import           Stack.Types.PackageIdentifier
 import           Stack.Types.PackageName
 import           Stack.Types.Version
 import           System.Process.Read (EnvOverride)
+
 #ifdef mingw32_HOST_OS
 import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Base16 as B16

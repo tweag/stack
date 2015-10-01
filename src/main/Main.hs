@@ -50,6 +50,7 @@ import           Prelude hiding (pi, mapM)
 import           Stack.Build
 import           Stack.Types.Build
 import           Stack.Config
+import           Stack.ConfigCmd as ConfigCmd
 import           Stack.Constants
 import qualified Stack.Docker as Docker
 import           Stack.Dot
@@ -308,13 +309,13 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
              addSubCommands
                 ConfigCmd.cfgCmdName
                 "Subcommands specific to modifying stack.yaml files"
-                (do addCommand ConfigCmd.cfgSet
+                (do addCommand ConfigCmd.cfgCmdSetName
                                "Set the field to the value"
                                cfgSetCmd
-                               (many (textArgument
-                                     (metavar "Value3" <> 
-                                     help ("Set this to global-stack yaml"))
-                                     ))
+                               (ConfigCmdOpts <$> (textArgument
+                                                            (metavar "Value3" <> 
+                                                            help ("Set this to global-stack yaml"))
+                                                            ))
                     )
              addSubCommands
                Image.imgCmdName
@@ -900,6 +901,17 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
      runStackTGlobal manager (lcConfig lc) go $
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
+
+cfgSetCmd :: ConfigCmd.ConfigCmdOpts -> GlobalOpts -> IO ()
+cfgSetCmd co go@GlobalOpts{..} = do
+    withConfigAndLock go $
+        do pwd <- getWorkingDir
+           config <- asks getConfig
+           miniConfig <- loadMiniConfig config
+           runReaderT
+               (cfgSetField
+                    ("resolver", "nightly") pwd co)
+               miniConfig
 
 imgDockerCmd :: () -> GlobalOpts -> IO ()
 imgDockerCmd () go@GlobalOpts{..} = do
