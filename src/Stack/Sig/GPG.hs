@@ -54,7 +54,7 @@ fullFingerprint (Fingerprint fp) = do
                  (let hasFingerprint = (==) ["Key", "fingerprint", "="] .
                           take 3
                       fingerprint = T.pack .
-                          concat .
+                          unwords .
                           drop 3
                   in Fingerprint . fingerprint <$>
                      find hasFingerprint (map words (lines out)))
