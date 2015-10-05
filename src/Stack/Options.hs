@@ -5,6 +5,7 @@ module Stack.Options
     (Command(..)
     ,benchOptsParser
     ,buildOptsParser
+    ,configCmdSetParser
     ,configOptsParser
     ,dockerOptsParser
     ,dockerCleanupOptsParser
@@ -27,27 +28,28 @@ import           Data.Char (isSpace, toLower)
 import           Data.List (intercalate)
 import           Data.List.Split (splitOn)
 import qualified Data.Map as Map
-import           Data.Map.Strict (Map)
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import           Data.Maybe
-import           Data.Monoid
+import Data.Maybe
+import Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import           Data.Text.Read (decimal)
-import           Options.Applicative.Args
-import           Options.Applicative.Builder.Extra
-import           Options.Applicative.Simple
-import           Options.Applicative.Types (readerAsk)
-import           Stack.Config (packagesParser)
-import           Stack.Constants (stackProgName)
-import           Stack.Docker
+import Data.Text.Read (decimal)
+import Options.Applicative.Args
+import Options.Applicative.Builder.Extra
+import Options.Applicative.Simple
+import Options.Applicative.Types (readerAsk)
+import Stack.Config (packagesParser)
+import Stack.Constants (stackProgName)
+import qualified Stack.ConfigCmd as ConfigCmd
+import Stack.Docker
 import qualified Stack.Docker as Docker
-import           Stack.Dot
-import           Stack.Ghci (GhciOpts(..))
-import           Stack.Init
-import           Stack.New
-import           Stack.Types
-import           Stack.Types.TemplateName
+import Stack.Dot
+import Stack.Ghci (GhciOpts(..))
+import Stack.Init
+import Stack.New
+import Stack.Types
+import Stack.Types.TemplateName
 
 -- | Command sum type for conditional arguments.
 data Command
@@ -70,13 +72,15 @@ benchOptsParser = BenchmarkOpts
 
 addCoverageFlags :: BuildOpts -> BuildOpts
 addCoverageFlags bopts
-    | toCoverage $ boptsTestOpts bopts
-        = bopts { boptsGhcOptions = "-fhpc" : boptsGhcOptions bopts }
-    | otherwise = bopts
+  | toCoverage $ boptsTestOpts bopts =
+      bopts
+      { boptsGhcOptions = "-fhpc" : boptsGhcOptions bopts
+      }
+  | otherwise =
+      bopts
 
 -- | Parser for build arguments.
-buildOptsParser :: Command
-                -> Parser BuildOpts
+buildOptsParser :: Command -> Parser BuildOpts
 buildOptsParser cmd =
             fmap addCoverageFlags $
             BuildOpts <$> target <*> libProfiling <*> exeProfiling <*>
@@ -705,5 +709,9 @@ pvpBoundsOption =
             Left e -> readerError e
             Right v -> return v
 
-configOptions :: Parser _
-configOptions = undefined
+configCmdSetParser :: Parser ConfigCmd.ConfigCmdSetOpts
+configCmdSetParser =
+    (ConfigCmd.ConfigCmdSetOpts <$>
+    (argument readAbstractResolver
+        (metavar "RESOLVER" <>
+        help ("Set this to global-stack yaml"))))

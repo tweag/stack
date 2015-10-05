@@ -312,11 +312,7 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
                 (do addCommand ConfigCmd.cfgCmdSetName
                                "Set the field to the value"
                                cfgSetCmd
-                               (ConfigCmdOpts <$> (textArgument
-                                                            (metavar "Value3" <> 
-                                                            help ("Set this to global-stack yaml"))
-                                                            ))
-                    )
+                               configCmdSetParser)
              addSubCommands
                Image.imgCmdName
                "Subcommands specific to imaging (EXPERIMENTAL)"
@@ -902,7 +898,7 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
 
-cfgSetCmd :: ConfigCmd.ConfigCmdOpts -> GlobalOpts -> IO ()
+cfgSetCmd :: ConfigCmd.ConfigCmdSetOpts -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
     withConfigAndLock go $
         do pwd <- getWorkingDir

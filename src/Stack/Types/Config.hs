@@ -48,6 +48,7 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Data.Typeable
 import           Data.Yaml (ParseException)
+import qualified Data.Yaml as Yaml
 import           Distribution.System (Platform)
 import qualified Distribution.Text
 import           Distribution.Version (anyVersion)
