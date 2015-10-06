@@ -4,8 +4,9 @@
 -- | Make changes to the stack yaml file
 
 module Stack.ConfigCmd
-       ( ConfigCmdOpts(..)
-       , ConfigCmdSetOpts(..)
+       ( ConfigCmdSetOpts(..)
+       , ConfigCmdSetField(..)
+       , ConfigCmdSetValue(..)
        , cfgSetField
        , cfgCmdSetName
        , cfgCmdName) where
@@ -31,20 +32,23 @@ import Stack.Init
 import qualified Data.Yaml                   as Yaml
 import Debug.Trace
 
-data ConfigCmdOpts = ConfigCmdOpts Text
+data ConfigCmdSetOpts = ConfigCmdSetOpts ConfigCmdSetField ConfigCmdSetValue
 
-data ConfigCmdSetOpts = ConfigCmdSetOpts AbstractResolver
+data ConfigCmdSetField = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text
+
+data ConfigCmdSetValue = ConfigCmdSetValue Text
+
 
 cfgSetField :: (MonadIO m, MonadMask m, MonadReader env m, HasConfig env, HasHttpManager env, HasGHCVariant env, MonadLogger m, MonadBaseControl IO m)
             => (k, v) -> Path Abs Dir -> ConfigCmdSetOpts -> m ()
-cfgSetField _ currDir (ConfigCmdSetOpts resolver) = do
+cfgSetField _ currDir (ConfigCmdSetOpts field value) = do
     let dest =
             currDir </> stackDotYaml
+        resolver = undefined
     exists <- fileExists dest
     let fp = toFilePath $ dest
     (ProjectAndConfigMonoid project _, warnings) <-
         liftIO (Yaml.decodeFileEither fp) >>= either throwM return
-    liftIO $ print resolver
     liftIO $ print project
     latestResolver <- makeConcreteResolver resolver
     let project' = project {projectResolver = latestResolver}
