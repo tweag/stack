@@ -38,7 +38,11 @@ import Data.Text.Read (decimal)
 import Options.Applicative.Args
 import Options.Applicative.Builder.Extra
 import Options.Applicative.Simple
+<<<<<<< HEAD
 import Options.Applicative.Types (readerAsk)
+=======
+import Options.Applicative.Types (readerAsk, fromM, oneM)
+>>>>>>> Adding differnt fields
 import Stack.Config (packagesParser)
 import Stack.Constants (stackProgName)
 import qualified Stack.ConfigCmd as ConfigCmd
@@ -706,12 +710,42 @@ pvpBoundsOption =
     readPvpBounds = do
         s <- readerAsk
         case parsePvpBounds $ T.pack s of
-            Left e -> readerError e
-            Right v -> return v
+            Left e ->
+                readerError e
+            Right v ->
+                return v
 
-configCmdSetParser :: Parser ConfigCmd.ConfigCmdSetOpts
+configCmdSetParser :: Parser ConfigCmdSet
 configCmdSetParser =
-    (ConfigCmd.ConfigCmdSetOpts <$>
-    (argument readAbstractResolver
-        (metavar "RESOLVER" <>
-        help ("Set this to global-stack yaml"))))
+    fromM $
+    do fieldSel <- oneM $ strArgument idm
+       -- let parsed = "resolver"
+       oneM $ parseFieldToVal fieldSel
+
+  where
+    -- ConfigCmdSetOpts <$>
+    -- (parseField <$>
+    --  strArgument
+    --         (long "field" <>
+    --          metavar "FIELD" <>
+    --          help "Set global-stack yaml field")) <*>
+    -- (argument
+    --        readAbstractResolver
+    --        (long "resolver" <>
+    --         metavar "RESOLVER" <>
+    --         help "Set this to global-stack yaml"))
+    parseFieldToVal :: String -> Parser ConfigCmdSet
+    parseFieldToVal s =
+        case s of
+            "resolver" ->
+                ConfigCmdSetResolver <$>
+                argument
+                    readAbstractResolver
+                    (metavar "RESOLVER" <>
+                     help "Override resolver in project file")
+            _
+             ->
+                ConfigCmdSetConfigMonoid . T.pack <$>
+                strArgument
+                    (metavar "FIELD" <>
+                     help "Change the field in config monoid")

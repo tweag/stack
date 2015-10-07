@@ -898,7 +898,7 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
 
-cfgSetCmd :: ConfigCmd.ConfigCmdSetOpts -> GlobalOpts -> IO ()
+cfgSetCmd :: ConfigCmd.ConfigCmdSet -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
     withConfigAndLock go $
         do pwd <- getWorkingDir

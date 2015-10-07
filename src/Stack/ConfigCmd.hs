@@ -4,9 +4,7 @@
 -- | Make changes to the stack yaml file
 
 module Stack.ConfigCmd
-       ( ConfigCmdSetOpts(..)
-       , ConfigCmdSetField(..)
-       , ConfigCmdSetValue(..)
+       ( ConfigCmdSet(..)
        , cfgSetField
        , cfgCmdSetName
        , cfgCmdName) where
@@ -21,30 +19,33 @@ import Control.Monad.Reader (MonadReader, asks)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import qualified Data.ByteString.Builder         as B
 import qualified Data.ByteString.Lazy            as L
+import Data.Monoid
 import Data.Text
 import qualified Data.Text as T
+import qualified Data.Yaml                   as Yaml
 import Network.HTTP.Client.Conduit (HasHttpManager)
 import Path
 import Path.IO
 import Stack.Constants
-import Stack.Types
 import Stack.Init
-import qualified Data.Yaml                   as Yaml
+import Stack.Types
+
 import Debug.Trace
 
-data ConfigCmdSetOpts = ConfigCmdSetOpts ConfigCmdSetField ConfigCmdSetValue
+data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text
 
-data ConfigCmdSetField = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text
-
-data ConfigCmdSetValue = ConfigCmdSetValue Text
-
-
-cfgSetField :: (MonadIO m, MonadMask m, MonadReader env m, HasConfig env, HasHttpManager env, HasGHCVariant env, MonadLogger m, MonadBaseControl IO m)
-            => (k, v) -> Path Abs Dir -> ConfigCmdSetOpts -> m ()
-cfgSetField _ currDir (ConfigCmdSetOpts field value) = do
+cfgSetField :: ( MonadIO m
+               , MonadMask m
+               , MonadReader env m
+               , HasConfig env
+               , HasHttpManager env
+               , HasGHCVariant env
+               , MonadLogger m
+               , MonadBaseControl IO m)
+               => (k, v) -> Path Abs Dir -> ConfigCmdSet -> m ()
+cfgSetField _ currDir (ConfigCmdSetResolver resolver) = do
     let dest =
             currDir </> stackDotYaml
-        resolver = undefined
     exists <- fileExists dest
     let fp = toFilePath $ dest
     (ProjectAndConfigMonoid project _, warnings) <-
@@ -54,6 +55,9 @@ cfgSetField _ currDir (ConfigCmdSetOpts field value) = do
     let project' = project {projectResolver = latestResolver}
     liftIO $ print project'
     liftIO $ L.writeFile fp $ B.toLazyByteString $ renderStackYaml project'
+    return ()
+cfgSetField _ currDir (ConfigCmdSetConfigMonoid t) = do
+    liftIO . putStrLn $ "Trying to write value to " <> (T.unpack t)
     return ()
 
 cfgCmdName :: String
