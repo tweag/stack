@@ -4,10 +4,14 @@
 -- | Make changes to the stack yaml file
 
 module Stack.ConfigCmd
-       ( ConfigCmdSet(..)
-       , cfgSetField
-       , cfgCmdSetName
-       , cfgCmdName) where
+       (ConfigCmdGet(..)
+       ,ConfigCmdSet(..)
+       ,ConfigCmdAdd(..)
+       ,cfgSetField
+       ,cfgCmdGetName
+       ,cfgCmdSetName
+       ,cfgCmdAddName
+       ,cfgCmdName) where
 
 import Control.Exception (assert)
 import Control.Exception.Enclosed (handleIO, catchAny)
@@ -32,7 +36,9 @@ import Stack.Types
 
 import Debug.Trace
 
+data ConfigCmdGet = ConfigCmdGetResolver | ConfigCmdGetConfigMonoid Text
 data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text
+data ConfigCmdAdd = ConfigCmdAddExtraDep | ConfigCmdAddPackage
 
 cfgSetField :: ( MonadIO m
                , MonadMask m
@@ -65,3 +71,9 @@ cfgCmdName = "config"
 
 cfgCmdSetName :: String
 cfgCmdSetName = "set"
+
+cfgCmdGetName :: String
+cfgCmdGetName = "get"
+
+cfgCmdAddName :: String
+cfgCmdAddName = "add"

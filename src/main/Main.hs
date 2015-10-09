@@ -309,10 +309,18 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
              addSubCommands
                 ConfigCmd.cfgCmdName
                 "Subcommands specific to modifying stack.yaml files"
-                (do addCommand ConfigCmd.cfgCmdSetName
+                (do addCommand ConfigCmd.cfgCmdGetName
+                               "Set the field to the value"
+                               cfgGetCmd
+                               configCmdGetParser
+                    addCommand ConfigCmd.cfgCmdSetName
                                "Set the field to the value"
                                cfgSetCmd
-                               configCmdSetParser)
+                               configCmdSetParser
+                    addCommand ConfigCmd.cfgCmdAddName
+                               "Set the field to the value"
+                               cfgAddCmd
+                               configCmdAddParser)
              addSubCommands
                Image.imgCmdName
                "Subcommands specific to imaging (EXPERIMENTAL)"
@@ -898,6 +906,9 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
 
+cfgGetCmd :: ConfigCmd.ConfigCmdGet -> GlobalOpts -> IO ()
+cfgGetCmd co go@GlobalOpts{..} = undefined
+
 cfgSetCmd :: ConfigCmd.ConfigCmdSet -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
     withConfigAndLock go $
@@ -908,6 +919,9 @@ cfgSetCmd co go@GlobalOpts{..} = do
                (cfgSetField
                     ("resolver", "nightly") pwd co)
                miniConfig
+
+cfgAddCmd :: ConfigCmd.ConfigCmdAdd -> GlobalOpts -> IO ()
+cfgAddCmd co go@GlobalOpts{..} = undefined
 
 imgDockerCmd :: () -> GlobalOpts -> IO ()
 imgDockerCmd () go@GlobalOpts{..} = do

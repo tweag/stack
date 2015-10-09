@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 
 module Stack.Options
     (Command(..)
@@ -25,35 +24,29 @@ module Stack.Options
 
 import           Control.Monad.Logger (LogLevel(..))
 import           Data.Char (isSpace, toLower)
-import           Data.List (intercalate)
 import           Data.List.Split (splitOn)
 import qualified Data.Map as Map
-import Data.Map.Strict (Map)
+import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
+import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Data.Text.Read (decimal)
-import Options.Applicative.Args
-import Options.Applicative.Builder.Extra
-import Options.Applicative.Simple
-<<<<<<< HEAD
-import Options.Applicative.Types (readerAsk)
-=======
-import Options.Applicative.Types (readerAsk, fromM, oneM)
->>>>>>> Adding differnt fields
-import Stack.Config (packagesParser)
-import Stack.Constants (stackProgName)
-import qualified Stack.ConfigCmd as ConfigCmd
-import Stack.Docker
+import           Data.Text.Read (decimal)
+import           Options.Applicative.Args
+import           Options.Applicative.Builder.Extra
+import           Options.Applicative.Simple
+import           Options.Applicative.Types (readerAsk, fromM, oneM)
+import           Stack.Config (packagesParser)
+import           Stack.ConfigCmd
+import           Stack.Docker
 import qualified Stack.Docker as Docker
-import Stack.Dot
-import Stack.Ghci (GhciOpts(..))
-import Stack.Init
-import Stack.New
-import Stack.Types
-import Stack.Types.TemplateName
+import           Stack.Dot
+import           Stack.Ghci (GhciOpts(..))
+import           Stack.Init
+import           Stack.New
+import           Stack.Types
+import           Stack.Types.TemplateName
 
 -- | Command sum type for conditional arguments.
 data Command
@@ -715,25 +708,16 @@ pvpBoundsOption =
             Right v ->
                 return v
 
+configCmdGetParser :: Parser ConfigCmdGet
+configCmdGetParser = undefined
+
 configCmdSetParser :: Parser ConfigCmdSet
 configCmdSetParser =
     fromM $
     do fieldSel <- oneM $ strArgument idm
-       -- let parsed = "resolver"
        oneM $ parseFieldToVal fieldSel
 
   where
-    -- ConfigCmdSetOpts <$>
-    -- (parseField <$>
-    --  strArgument
-    --         (long "field" <>
-    --          metavar "FIELD" <>
-    --          help "Set global-stack yaml field")) <*>
-    -- (argument
-    --        readAbstractResolver
-    --        (long "resolver" <>
-    --         metavar "RESOLVER" <>
-    --         help "Set this to global-stack yaml"))
     parseFieldToVal :: String -> Parser ConfigCmdSet
     parseFieldToVal s =
         case s of
@@ -749,3 +733,6 @@ configCmdSetParser =
                 strArgument
                     (metavar "FIELD" <>
                      help "Change the field in config monoid")
+
+configCmdAddParser :: Parser ConfigCmdAdd
+configCmdAddParser = undefined
