@@ -909,16 +909,14 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
             Docker.cleanup cleanupOpts
 
 cfgGetCmd :: ConfigCmd.ConfigCmdGet -> GlobalOpts -> IO ()
-cfgGetCmd co go@GlobalOpts{..} =
+cfgGetCmd co go@GlobalOpts{..} = do
     (manager,lc) <- liftIO $ loadConfigWithOpts go
     withBuildConfigAndLock
         go
         (\_ -> do env <- ask
-                 let cfg = envConfig env
-                     bc = envConfigBuildConfig cfg
-                 runReaderT
-                     (cfgCmdGet co)
-                     env)
+                  runReaderT
+                      (cfgCmdGet co)
+                      env)
 
 cfgSetCmd :: ConfigCmd.ConfigCmdSet -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
@@ -926,11 +924,9 @@ cfgSetCmd co go@GlobalOpts{..} = do
     withBuildConfigAndLock
         go
         (\_ -> do env <- ask
-                 let cfg = envConfig env
-                     bc = envConfigBuildConfig cfg
-                 runReaderT
-                     (cfgCmdSet co)
-                     env)
+                  runReaderT
+                      (cfgCmdSet co)
+                      env)
 
 cfgAddCmd :: ConfigCmd.ConfigCmdAdd -> GlobalOpts -> IO ()
 cfgAddCmd co go@GlobalOpts{..} = undefined

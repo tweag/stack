@@ -7,7 +7,9 @@ module Stack.ConfigCmd
        (ConfigCmdGet(..)
        ,ConfigCmdSet(..)
        ,ConfigCmdAdd(..)
+       ,cfgCmdGet
        ,cfgCmdSet
+       ,cfgCmdAdd
        ,cfgCmdGetName
        ,cfgCmdSetName
        ,cfgCmdAddName
@@ -36,20 +38,34 @@ import Stack.Types
 
 import Debug.Trace
 
-data ConfigCmdGet = ConfigCmdGetResolver | ConfigCmdGetConfigMonoid Text
+data ConfigCmdGet = ConfigCmdGetConfigMonoid Text
 data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text Text
 data ConfigCmdAdd = ConfigCmdAddExtraDep | ConfigCmdAddPackage
 
+
+
+cfgCmdGet :: ( MonadIO m
+             , MonadMask m
+             , MonadReader env m
+             , HasConfig env
+             , HasBuildConfig env
+             , HasHttpManager env
+             , HasGHCVariant env
+             , MonadLogger m
+             , MonadBaseControl IO m)
+             => ConfigCmdGet -> m ()
+cfgCmdGet _ = do undefined
+
 cfgCmdSet :: ( MonadIO m
-                     , MonadMask m
-                     , MonadReader env m
-                     , HasConfig env
-                     , HasBuildConfig env
-                     , HasHttpManager env
-                     , HasGHCVariant env
-                     , MonadLogger m
-                     , MonadBaseControl IO m)
-                     => ConfigCmdSet -> m ()
+             , MonadMask m
+             , MonadReader env m
+             , HasConfig env
+             , HasBuildConfig env
+             , HasHttpManager env
+             , HasGHCVariant env
+             , MonadLogger m
+             , MonadBaseControl IO m)
+             => ConfigCmdSet -> m ()
 cfgCmdSet (ConfigCmdSetResolver resolver) = do
     dest <- bcStackYaml <$> asks getBuildConfig
     -- let dest =
@@ -68,6 +84,19 @@ cfgCmdSet (ConfigCmdSetConfigMonoid f v) = do
     liftIO . putStrLn $ "Trying to write value " <> (T.unpack v) <> " to field " <> (T.unpack f)
     return ()
 
+
+cfgCmdAdd :: ( MonadIO m
+             , MonadMask m
+             , MonadReader env m
+             , HasConfig env
+             , HasBuildConfig env
+             , HasHttpManager env
+             , HasGHCVariant env
+             , MonadLogger m
+             , MonadBaseControl IO m)
+             => ConfigCmdAdd -> m ()
+cfgCmdAdd _ = do undefined
+                 
 cfgCmdName :: String
 cfgCmdName = "config"
 
