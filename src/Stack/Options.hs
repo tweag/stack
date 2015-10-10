@@ -714,9 +714,8 @@ configCmdGetParser = undefined
 configCmdSetParser :: Parser ConfigCmdSet
 configCmdSetParser =
     fromM $
-    do fieldSel <- oneM $ strArgument idm
+    do fieldSel <- oneM $ strArgument (help "set resolver or config option")
        oneM $ parseFieldToVal fieldSel
-
   where
     parseFieldToVal :: String -> Parser ConfigCmdSet
     parseFieldToVal s =
@@ -727,12 +726,13 @@ configCmdSetParser =
                     readAbstractResolver
                     (metavar "RESOLVER" <>
                      help "Override resolver in project file")
-            _
-             ->
-                ConfigCmdSetConfigMonoid . T.pack <$>
-                strArgument
-                    (metavar "FIELD" <>
-                     help "Change the field in config monoid")
+            f ->
+                ConfigCmdSetConfigMonoid
+                (T.pack f) <$>
+                (T.pack <$>
+                 strArgument
+                     (metavar "VALUE" <>
+                      help "Change the Value in config monoid"))
 
 configCmdAddParser :: Parser ConfigCmdAdd
 configCmdAddParser = undefined

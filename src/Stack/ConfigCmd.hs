@@ -7,7 +7,7 @@ module Stack.ConfigCmd
        (ConfigCmdGet(..)
        ,ConfigCmdSet(..)
        ,ConfigCmdAdd(..)
-       ,cfgSetField
+       ,cfgCmdSet
        ,cfgCmdGetName
        ,cfgCmdSetName
        ,cfgCmdAddName
@@ -37,22 +37,24 @@ import Stack.Types
 import Debug.Trace
 
 data ConfigCmdGet = ConfigCmdGetResolver | ConfigCmdGetConfigMonoid Text
-data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text
+data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver | ConfigCmdSetConfigMonoid Text Text
 data ConfigCmdAdd = ConfigCmdAddExtraDep | ConfigCmdAddPackage
 
-cfgSetField :: ( MonadIO m
-               , MonadMask m
-               , MonadReader env m
-               , HasConfig env
-               , HasHttpManager env
-               , HasGHCVariant env
-               , MonadLogger m
-               , MonadBaseControl IO m)
-               => (k, v) -> Path Abs Dir -> ConfigCmdSet -> m ()
-cfgSetField _ currDir (ConfigCmdSetResolver resolver) = do
-    let dest =
-            currDir </> stackDotYaml
-    exists <- fileExists dest
+cfgCmdSet :: ( MonadIO m
+                     , MonadMask m
+                     , MonadReader env m
+                     , HasConfig env
+                     , HasBuildConfig env
+                     , HasHttpManager env
+                     , HasGHCVariant env
+                     , MonadLogger m
+                     , MonadBaseControl IO m)
+                     => ConfigCmdSet -> m ()
+cfgCmdSet (ConfigCmdSetResolver resolver) = do
+    dest <- bcStackYaml <$> asks getBuildConfig
+    -- let dest =
+    --         stackRoot </> stackDotYaml
+    -- exists <- fileExists dest
     let fp = toFilePath $ dest
     (ProjectAndConfigMonoid project _, warnings) <-
         liftIO (Yaml.decodeFileEither fp) >>= either throwM return
@@ -62,8 +64,8 @@ cfgSetField _ currDir (ConfigCmdSetResolver resolver) = do
     liftIO $ print project'
     liftIO $ L.writeFile fp $ B.toLazyByteString $ renderStackYaml project'
     return ()
-cfgSetField _ currDir (ConfigCmdSetConfigMonoid t) = do
-    liftIO . putStrLn $ "Trying to write value to " <> (T.unpack t)
+cfgCmdSet (ConfigCmdSetConfigMonoid f v) = do
+    liftIO . putStrLn $ "Trying to write value " <> (T.unpack v) <> " to field " <> (T.unpack f)
     return ()
 
 cfgCmdName :: String
