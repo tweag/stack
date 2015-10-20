@@ -309,18 +309,10 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
              addSubCommands
                 ConfigCmd.cfgCmdName
                 "Subcommands specific to modifying stack.yaml files"
-                (do addCommand ConfigCmd.cfgCmdGetName
-                               "Retrieves the value of a field in the project's stack.yaml"
-                               cfgGetCmd
-                               configCmdGetParser
-                    addCommand ConfigCmd.cfgCmdSetName
-                               "Sets a field in the project's stack.yaml to value"
-                               cfgSetCmd
-                               configCmdSetParser
-                    addCommand ConfigCmd.cfgCmdAddName
-                               "Adds a package or extra-dep to the project's stack.yaml"
-                               cfgAddCmd
-                               configCmdAddParser)
+                (addCommand ConfigCmd.cfgCmdSetName
+                            "Sets a field in the project's stack.yaml to value"
+                            cfgSetCmd
+                            configCmdSetParser)
              addSubCommands
                Image.imgCmdName
                "Subcommands specific to imaging (EXPERIMENTAL)"
@@ -908,15 +900,6 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
 
-cfgGetCmd :: ConfigCmd.ConfigCmdGet -> GlobalOpts -> IO ()
-cfgGetCmd co go@GlobalOpts{..} = do
-    withBuildConfigAndLock
-        go
-        (\_ -> do env <- ask
-                  runReaderT
-                      (cfgCmdGet co)
-                      env)
-
 cfgSetCmd :: ConfigCmd.ConfigCmdSet -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
     withBuildConfigAndLock
@@ -925,9 +908,6 @@ cfgSetCmd co go@GlobalOpts{..} = do
                   runReaderT
                       (cfgCmdSet co)
                       env)
-
-cfgAddCmd :: ConfigCmd.ConfigCmdAdd -> GlobalOpts -> IO ()
-cfgAddCmd co go@GlobalOpts{..} = undefined
 
 imgDockerCmd :: () -> GlobalOpts -> IO ()
 imgDockerCmd () go@GlobalOpts{..} = do

@@ -36,17 +36,17 @@ import           Data.Text.Read (decimal)
 import           Options.Applicative.Args
 import           Options.Applicative.Builder.Extra
 import           Options.Applicative.Simple
-import           Options.Applicative.Types (readerAsk, fromM, oneM)
-import           Stack.Config (packagesParser)
-import           Stack.ConfigCmd
-import           Stack.Docker
+import Options.Applicative.Types (readerAsk, fromM, oneM)
+import Stack.Config (packagesParser)
+import Stack.ConfigCmd
+import Stack.Docker
 import qualified Stack.Docker as Docker
-import           Stack.Dot
-import           Stack.Ghci (GhciOpts(..))
-import           Stack.Init
-import           Stack.New
-import           Stack.Types
-import           Stack.Types.TemplateName
+import Stack.Dot
+import Stack.Ghci (GhciOpts(..))
+import Stack.Init
+import Stack.New
+import Stack.Types
+import Stack.Types.TemplateName
 
 -- | Command sum type for conditional arguments.
 data Command
@@ -708,39 +708,22 @@ pvpBoundsOption =
             Right v ->
                 return v
 
-configCmdGetParser :: Parser ConfigCmdGet
-configCmdGetParser =
-    ConfigCmdGetConfigMonoid <$>
-    textArgument
-        (metavar "FIELD" <>
-         help "field e.g. \"resolver\"")
-
 configCmdSetParser :: Parser ConfigCmdSet
 configCmdSetParser =
-    fromM $
-    do field <-
-           oneM $
-           strArgument
-               (metavar "FIELD" <>
-                help "set resolver or config option")
-       oneM $ fieldToValParser field
+    fromM
+        (do field <-
+                oneM
+                    (strArgument
+                         (metavar "FIELD VALUE"))
+            oneM (fieldToValParser field))
   where
     fieldToValParser :: String -> Parser ConfigCmdSet
-    fieldToValParser s =
+    fieldToValParser s = do
         case s of
             "resolver" ->
                 ConfigCmdSetResolver <$>
                 argument
                     readAbstractResolver
-                    (metavar "RESOLVER" <>
-                     help "Override resolver in project file")
-            f ->
-                ConfigCmdSetConfigMonoid
-                    (T.pack f) <$>
-                (T.pack <$>
-                 strArgument
-                     (metavar "VALUE" <>
-                      help "Change the Value in config monoid"))
-
-configCmdAddParser :: Parser ConfigCmdAdd
-configCmdAddParser = undefined
+                    idm
+            _ ->
+                error "parse stack config set field: only set resolver is implemented"
