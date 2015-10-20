@@ -1,19 +1,15 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | The Config type.
 
@@ -34,19 +30,15 @@ import           Data.Aeson.Extended
 import           Data.Attoparsec.Args
 import           Data.Binary (Binary)
 import           Data.ByteString (ByteString)
-import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Char8 as S8
 import           Data.Either (partitionEithers)
-import qualified Data.Foldable                   as F
-import qualified Data.HashMap.Strict             as HM
-import           Data.Hashable (Hashable)
 import           Data.List (stripPrefix)
+import           Data.Hashable (Hashable)
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Map.Strict as M
 import           Data.Maybe
 import           Data.Monoid
-import Data.Proxy
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (Text)
@@ -54,11 +46,9 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Data.Typeable
 import           Data.Yaml (ParseException)
-import qualified Data.Yaml as Yaml
 import           Distribution.System (Platform)
 import qualified Distribution.Text
 import           Distribution.Version (anyVersion)
-import GHC.Generics
 import           Network.HTTP.Client (parseUrl)
 import           Path
 import qualified Paths_stack as Meta
@@ -71,7 +61,6 @@ import           Stack.Types.PackageIdentifier
 import           Stack.Types.PackageName
 import           Stack.Types.Version
 import           System.Process.Read (EnvOverride)
-
 #ifdef mingw32_HOST_OS
 import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Base16 as B16
@@ -455,7 +444,7 @@ data Project = Project
     -- ^ How we resolve which dependencies to use
     , projectExtraPackageDBs :: ![FilePath]
     }
-  deriving (Show)
+  deriving Show
 
 instance ToJSON Project where
     toJSON p = object
@@ -627,7 +616,7 @@ data ConfigMonoid =
     ,configMonoidAllowNewer          :: !(Maybe Bool)
     -- ^ See 'configMonoidAllowNewer'
     }
-  deriving (Show, Generic)
+  deriving Show
 
 instance Monoid ConfigMonoid where
   mempty = ConfigMonoid
@@ -706,49 +695,50 @@ instance FromJSON (ConfigMonoid, [JSONWarning]) where
 -- warnings for missing fields.
 parseConfigMonoidJSON :: Object -> WarningParser ConfigMonoid
 parseConfigMonoidJSON obj = do
-    configMonoidDockerOpts <- jsonSubWarnings (obj ..:? cfgName configMonoidDockerOptsName ..!= mempty)
-    configMonoidConnectionCount <- obj ..:? cfgName configMonoidConnectionCountName
-    configMonoidHideTHLoading <- obj ..:? cfgName configMonoidHideTHLoadingName
-    configMonoidLatestSnapshotUrl <- obj ..:? cfgName configMonoidLatestSnapshotUrlName
-    configMonoidPackageIndices <- jsonSubWarningsTT (obj ..:?  cfgName configMonoidPackageIndicesName)
-    configMonoidSystemGHC <- obj ..:? cfgName configMonoidSystemGHCName
-    configMonoidInstallGHC <- obj ..:? cfgName configMonoidInstallGHCName
-    configMonoidSkipGHCCheck <- obj ..:? cfgName configMonoidSkipGHCCheckName
-    configMonoidSkipMsys <- obj ..:? cfgName configMonoidSkipMsysName
+    configMonoidDockerOpts <- jsonSubWarnings (obj ..:? "docker" ..!= mempty)
+    configMonoidConnectionCount <- obj ..:? "connection-count"
+    configMonoidHideTHLoading <- obj ..:? "hide-th-loading"
+    configMonoidLatestSnapshotUrl <- obj ..:? "latest-snapshot-url"
+    configMonoidPackageIndices <- jsonSubWarningsTT (obj ..:? "package-indices")
+    configMonoidSystemGHC <- obj ..:? "system-ghc"
+    configMonoidInstallGHC <- obj ..:? "install-ghc"
+    configMonoidSkipGHCCheck <- obj ..:? "skip-ghc-check"
+    configMonoidSkipMsys <- obj ..:? "skip-msys"
     configMonoidRequireStackVersion <- unVersionRangeJSON <$>
-                                       obj ..:? cfgName configMonoidRequireStackVersionName
+                                       obj ..:? "require-stack-version"
                                            ..!= VersionRangeJSON anyVersion
-    configMonoidOS <- obj ..:? cfgName configMonoidOSName
-    configMonoidArch <- obj ..:? cfgName configMonoidArchName
-    configMonoidGHCVariant <- obj ..:? cfgName configMonoidGHCVariantName
-    configMonoidJobs <- obj ..:? cfgName configMonoidJobsName
-    configMonoidExtraIncludeDirs <- obj ..:?  cfgName configMonoidExtraIncludeDirsName ..!= Set.empty
-    configMonoidExtraLibDirs <- obj ..:?  cfgName configMonoidExtraLibDirsName ..!= Set.empty
-    configMonoidConcurrentTests <- obj ..:? cfgName configMonoidConcurrentTestsName
-    configMonoidLocalBinPath <- obj ..:? cfgName configMonoidLocalBinPathName
-    configMonoidImageOpts <- jsonSubWarnings (obj ..:?  cfgName configMonoidImageOptsName ..!= mempty)
+    configMonoidOS <- obj ..:? "os"
+    configMonoidArch <- obj ..:? "arch"
+    configMonoidGHCVariant <- obj ..:? "ghc-variant"
+    configMonoidJobs <- obj ..:? "jobs"
+    configMonoidExtraIncludeDirs <- obj ..:? "extra-include-dirs" ..!= Set.empty
+    configMonoidExtraLibDirs <- obj ..:? "extra-lib-dirs" ..!= Set.empty
+    configMonoidConcurrentTests <- obj ..:? "concurrent-tests"
+    configMonoidLocalBinPath <- obj ..:? "local-bin-path"
+    configMonoidImageOpts <- jsonSubWarnings (obj ..:? "image" ..!= mempty)
     templates <- obj ..:? "templates"
     (configMonoidScmInit,configMonoidTemplateParameters) <-
       case templates of
         Nothing -> return (Nothing,M.empty)
         Just tobj -> do
-          scmInit <- tobj ..:? cfgName configMonoidScmInitName
-          params <- tobj ..:? cfgName configMonoidTemplateParametersName
+          scmInit <- tobj ..:? "scm-init"
+          params <- tobj ..:? "params"
           return (scmInit,fromMaybe M.empty params)
-    configMonoidCompilerCheck <- obj ..:? cfgName configMonoidCompilerCheckName
+    configMonoidCompilerCheck <- obj ..:? "compiler-check"
 
-    mghcoptions <- obj ..:? cfgName configMonoidGhcOptionsName
+    mghcoptions <- obj ..:? "ghc-options"
     configMonoidGhcOptions <-
         case mghcoptions of
             Nothing -> return mempty
             Just m -> fmap Map.fromList $ mapM handleGhcOptions $ Map.toList m
 
-    extraPath <- obj ..:? cfgName configMonoidExtraPathName ..!= []
+    extraPath <- obj ..:? "extra-path" ..!= []
     configMonoidExtraPath <- forM extraPath $
         either (fail . show) return . parseAbsDir . T.unpack
 
     configMonoidSetupInfoLocations <-
-        maybeToList <$> jsonSubWarningsT (obj ..:?  cfgName configMonoidSetupInfoLocationsName)
+        maybeToList <$> jsonSubWarningsT (obj ..:? "setup-info")
+
     configMonoidPvpBounds <- obj ..:? "pvp-bounds"
     configMonoidModifyCodePage <- obj ..:? "modify-code-page"
     configMonoidExplicitSetupDeps <-
@@ -782,89 +772,6 @@ parseConfigMonoidJSON obj = do
                         Left e -> fail $ show e
                         Right x -> return $ Just x
         return (name, b)
-
-data ConfigMonoidField = ConfigMonoidField {cfgName :: Text, cfgValueText :: ConfigMonoid -> Text}
-
-configMonoidDockerOptsName :: ConfigMonoidField
-configMonoidDockerOptsName = ConfigMonoidField "docker" (T.pack . show . Yaml.encode . configMonoidDockerOpts)
-
-configMonoidConnectionCountName :: ConfigMonoidField
-configMonoidConnectionCountName = ConfigMonoidField "connection-count" (const "foobar")
-
-configMonoidHideTHLoadingName :: ConfigMonoidField
-configMonoidHideTHLoadingName = ConfigMonoidField "hide-th-loading" (const "foobar")
-
-configMonoidLatestSnapshotUrlName :: ConfigMonoidField
-configMonoidLatestSnapshotUrlName = ConfigMonoidField "latest-snapshot-url" (const "foobar")
-
-configMonoidPackageIndicesName :: ConfigMonoidField
-configMonoidPackageIndicesName = ConfigMonoidField "package-indices" (const "foobar")
-
-configMonoidSystemGHCName :: ConfigMonoidField
-configMonoidSystemGHCName = ConfigMonoidField "system-ghc" (const "foobar")
-
-configMonoidInstallGHCName :: ConfigMonoidField
-configMonoidInstallGHCName = ConfigMonoidField "install-ghc" (const "foobar")
-
-configMonoidSkipGHCCheckName :: ConfigMonoidField
-configMonoidSkipGHCCheckName = ConfigMonoidField "skip-ghc-check" (const "foobar")
-
-configMonoidSkipMsysName :: ConfigMonoidField
-configMonoidSkipMsysName = ConfigMonoidField "skip-msys" (const "foobar")
-
-configMonoidRequireStackVersionName :: ConfigMonoidField
-configMonoidRequireStackVersionName = ConfigMonoidField "require-stack-version" (const "foobar")
-
-configMonoidOSName :: ConfigMonoidField
-configMonoidOSName = ConfigMonoidField "os" (const "foobar")
-
-configMonoidArchName :: ConfigMonoidField
-configMonoidArchName = ConfigMonoidField "arch" (const "foobar")
-
-configMonoidGHCVariantName :: ConfigMonoidField
-configMonoidGHCVariantName = ConfigMonoidField "ghc-variant" (const "foobar")
-
-configMonoidJobsName :: ConfigMonoidField
-configMonoidJobsName = ConfigMonoidField "jobs" (const "foobar")
-
-configMonoidExtraIncludeDirsName :: ConfigMonoidField
-configMonoidExtraIncludeDirsName = ConfigMonoidField "extra-include-dirs" (const "foobar")
-
-configMonoidExtraLibDirsName :: ConfigMonoidField
-configMonoidExtraLibDirsName = ConfigMonoidField "extra-lib-dirs" (const "foobar")
-
-configMonoidConcurrentTestsName :: ConfigMonoidField
-configMonoidConcurrentTestsName = ConfigMonoidField "concurrent-tests" (const "foobar")
-
-configMonoidLocalBinPathName :: ConfigMonoidField
-configMonoidLocalBinPathName = ConfigMonoidField "local-bin-path" (const "foobar")
-
-configMonoidImageOptsName :: ConfigMonoidField
-configMonoidImageOptsName = ConfigMonoidField "image" (const "foobar")
-
-configMonoidTemplatesName :: ConfigMonoidField
-configMonoidTemplatesName = ConfigMonoidField "templates" (const "foobar")
-
-configMonoidScmInitName :: ConfigMonoidField
-configMonoidScmInitName = ConfigMonoidField "scm-init" (const "foobar")
-
-configMonoidTemplateParametersName :: ConfigMonoidField
-configMonoidTemplateParametersName = ConfigMonoidField "params" (const "foobar")
-
-configMonoidCompilerCheckName :: ConfigMonoidField
-configMonoidCompilerCheckName = ConfigMonoidField "compiler-check" (const "foobar")
-
-configMonoidGhcOptionsName :: ConfigMonoidField
-configMonoidGhcOptionsName = ConfigMonoidField "ghc-options" (const "foobar")
-
-configMonoidExtraPathName :: ConfigMonoidField
-configMonoidExtraPathName = ConfigMonoidField "extra-path" (const "foobar")
-
-configMonoidSetupInfoLocationsName :: ConfigMonoidField
-configMonoidSetupInfoLocationsName = ConfigMonoidField "setup-info" (const "foobar")
-
-configMonoidPvpBoundsName :: ConfigMonoidField
-configMonoidPvpBoundsName = ConfigMonoidField "pvp-bounds" (const "foobar")
 
 -- | Newtype for non-orphan FromJSON instance.
 newtype VersionRangeJSON = VersionRangeJSON { unVersionRangeJSON :: VersionRange }

@@ -9,7 +9,7 @@ import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Data.Aeson.Extended
 import Data.Monoid
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Path
 
 -- | Docker configuration.
@@ -111,18 +111,6 @@ instance FromJSON (DockerOptsMonoid, [JSONWarning]) where
               dockerMonoidStackExe         <- o ..:? dockerStackExeArgName
               dockerMonoidSetUser          <- o ..:? dockerSetUserArgName
               return DockerOptsMonoid{..})
-
-instance ToJSON DockerOptsMonoid where
-  toJSON DockerOptsMonoid{..} = let
-    repoOrImagePair = 
-      case dockerMonoidRepoOrImage of
-                    Just (DockerMonoidImage s) -> (dockerImageArgName, String (pack s))
-                    Just (DockerMonoidRepo s) -> (dockerRepoArgName, String (pack s))
-                    Nothing -> (dockerImageArgName, Null)
-    in object
-    [ dockerEnableArgName .= dockerMonoidEnable
-    , repoOrImagePair
-    ]
 
 -- | Left-biased combine Docker options
 instance Monoid DockerOptsMonoid where

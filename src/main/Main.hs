@@ -844,26 +844,25 @@ ghciCmd ghciOpts go@GlobalOpts{..} =
 ideCmd :: ([Text], [String]) -> GlobalOpts -> IO ()
 ideCmd (targets,args) go@GlobalOpts{..} =
     withBuildConfig go $ -- No locking needed.
-    ide targets args
+      ide targets args
 
 -- | List packages in the project.
 packagesCmd :: () -> GlobalOpts -> IO ()
 packagesCmd () go@GlobalOpts{..} =
     withBuildConfig go $
-    do econfig <- asks getEnvConfig
-       locals <-
-           forM (M.toList (envConfigPackages econfig)) $
-           \(dir,_) ->
-                do cabalfp <- getCabalFileName dir
-                   parsePackageNameFromFilePath cabalfp
-       forM_ locals (liftIO . putStrLn . packageNameString)
+      do econfig <- asks getEnvConfig
+         locals <-
+             forM (M.toList (envConfigPackages econfig)) $
+             \(dir,_) ->
+                  do cabalfp <- getCabalFileName dir
+                     parsePackageNameFromFilePath cabalfp
+         forM_ locals (liftIO . putStrLn . packageNameString)
 
 -- | List load targets for a package target.
 targetsCmd :: Text -> GlobalOpts -> IO ()
 targetsCmd target go@GlobalOpts{..} =
     withBuildConfig go $
-    do (_realTargets,_,pkgs) <-
-           ghciSetup Nothing [target]
+    do (_realTargets,_,pkgs) <- ghciSetup Nothing [target]
        pwd <- getWorkingDir
        targets <-
            fmap
@@ -883,8 +882,7 @@ dockerPullCmd _ go@GlobalOpts{..} = do
 -- | Reset the Docker sandbox.
 dockerResetCmd :: Bool -> GlobalOpts -> IO ()
 dockerResetCmd keepHome go@GlobalOpts{..} = do
-    (manager,lc) <-
-        liftIO (loadConfigWithOpts go)
+    (manager,lc) <- liftIO (loadConfigWithOpts go)
     -- TODO: can we eliminate this lock if it doesn't touch ~/.stack/?
     withUserFileLock go (configStackRoot $ lcConfig lc) $ \_ ->
      runStackLoggingTGlobal manager go $

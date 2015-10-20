@@ -1,11 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
 
 -- | Make changes to the stack yaml file
 
@@ -15,31 +9,18 @@ module Stack.ConfigCmd
        ,cfgCmdSetName
        ,cfgCmdName) where
 
-import Control.Exception (assert)
-import Control.Exception.Enclosed (handleIO, catchAny)
-import Control.Monad (liftM, when)
-import Control.Monad.Catch (MonadMask, throwM, MonadThrow)
-import Control.Monad.IO.Class
-import Control.Monad.Logger
-import Control.Monad.Reader (MonadReader, asks)
-import Control.Monad.Trans.Control (MonadBaseControl)
+import           Control.Monad.Catch (MonadMask, throwM)
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger
+import           Control.Monad.Reader (MonadReader, asks)
 import qualified Data.ByteString.Builder         as B
 import qualified Data.ByteString.Lazy            as L
-import Data.Data
 import qualified Data.HashMap.Strict as HMap
-import qualified Data.Map.Strict as Map
-import Data.Monoid
-import Data.Proxy
-import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Yaml as Yaml
-import Network.HTTP.Client.Conduit (HasHttpManager)
-import Path
-import Path.IO
-import Stack.Constants
-import Stack.Init
-import Stack.Types
+import           Network.HTTP.Client.Conduit (HasHttpManager)
+import           Path
+import           Stack.Init
+import           Stack.Types
 
 data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver
 
@@ -65,6 +46,7 @@ cfgCmdSet (ConfigCmdSetResolver newResolver) = do
                 "resolver"
                 (Yaml.String newResolverText)
                 projectYamlConfig
+    -- We do need to check to ensure the build plan is valid  
     liftIO
         (L.writeFile
              stackYamlFp

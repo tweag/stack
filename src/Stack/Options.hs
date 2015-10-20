@@ -24,6 +24,7 @@ module Stack.Options
 
 import           Control.Monad.Logger (LogLevel(..))
 import           Data.Char (isSpace, toLower)
+import           Data.List (intercalate)
 import           Data.List.Split (splitOn)
 import qualified Data.Map as Map
 import           Data.Map.Strict (Map)
@@ -36,17 +37,18 @@ import           Data.Text.Read (decimal)
 import           Options.Applicative.Args
 import           Options.Applicative.Builder.Extra
 import           Options.Applicative.Simple
-import Options.Applicative.Types (readerAsk, fromM, oneM)
-import Stack.Config (packagesParser)
-import Stack.ConfigCmd
-import Stack.Docker
+import           Options.Applicative.Types (fromM, oneM, readerAsk)
+import           Stack.Config (packagesParser)
+import           Stack.ConfigCmd
+import           Stack.Constants (stackProgName)
+import           Stack.Docker
 import qualified Stack.Docker as Docker
-import Stack.Dot
-import Stack.Ghci (GhciOpts(..))
-import Stack.Init
-import Stack.New
-import Stack.Types
-import Stack.Types.TemplateName
+import           Stack.Dot
+import           Stack.Ghci (GhciOpts(..))
+import           Stack.Init
+import           Stack.New
+import           Stack.Types
+import           Stack.Types.TemplateName
 
 -- | Command sum type for conditional arguments.
 data Command
@@ -69,15 +71,13 @@ benchOptsParser = BenchmarkOpts
 
 addCoverageFlags :: BuildOpts -> BuildOpts
 addCoverageFlags bopts
-  | toCoverage $ boptsTestOpts bopts =
-      bopts
-      { boptsGhcOptions = "-fhpc" : boptsGhcOptions bopts
-      }
-  | otherwise =
-      bopts
+    | toCoverage $ boptsTestOpts bopts
+        = bopts { boptsGhcOptions = "-fhpc" : boptsGhcOptions bopts }
+    | otherwise = bopts
 
 -- | Parser for build arguments.
-buildOptsParser :: Command -> Parser BuildOpts
+buildOptsParser :: Command
+                -> Parser BuildOpts
 buildOptsParser cmd =
             fmap addCoverageFlags $
             BuildOpts <$> target <*> libProfiling <*> exeProfiling <*>
