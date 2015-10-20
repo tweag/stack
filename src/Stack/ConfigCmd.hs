@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -9,27 +10,32 @@ module Stack.ConfigCmd
        ,cfgCmdSetName
        ,cfgCmdName) where
 
-import           Control.Monad.Catch (MonadMask, throwM)
+import           Control.Monad.Catch (MonadMask, throwM, MonadThrow)
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Reader (MonadReader, asks)
+import           Control.Monad.Trans.Control (MonadBaseControl)
 import qualified Data.ByteString.Builder         as B
 import qualified Data.ByteString.Lazy            as L
 import qualified Data.HashMap.Strict as HMap
 import qualified Data.Yaml as Yaml
 import           Network.HTTP.Client.Conduit (HasHttpManager)
 import           Path
+import           Stack.BuildPlan
 import           Stack.Init
 import           Stack.Types
 
 data ConfigCmdSet = ConfigCmdSetResolver AbstractResolver
 
 cfgCmdSet :: ( MonadIO m
+             , MonadBaseControl IO m
              , MonadMask m
              , MonadReader env m
              , HasConfig env
              , HasBuildConfig env
              , HasHttpManager env
+             , HasGHCVariant env
+             , MonadThrow m
              , MonadLogger m)
              => ConfigCmdSet -> m ()
 cfgCmdSet (ConfigCmdSetResolver newResolver) = do
@@ -41,12 +47,15 @@ cfgCmdSet (ConfigCmdSetResolver newResolver) = do
         liftIO (Yaml.decodeFileEither stackYamlFp) >>=
         either throwM return
     newResolverText <- resolverName <$> makeConcreteResolver newResolver
+    -- We checking here that the snapshot actually exists
+    snap <- parseSnapName newResolverText
+    _ <- loadMiniBuildPlan snap
+
     let projectYamlConfig' =
             HMap.insert
                 "resolver"
                 (Yaml.String newResolverText)
                 projectYamlConfig
-    -- We do need to check to ensure the build plan is valid  
     liftIO
         (L.writeFile
              stackYamlFp
