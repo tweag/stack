@@ -310,15 +310,15 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter -> do
                 ConfigCmd.cfgCmdName
                 "Subcommands specific to modifying stack.yaml files"
                 (do addCommand ConfigCmd.cfgCmdGetName
-                               "Set the field to the value"
+                               "Retrieves the value of a field in the project's stack.yaml"
                                cfgGetCmd
                                configCmdGetParser
                     addCommand ConfigCmd.cfgCmdSetName
-                               "Set the field to the value"
+                               "Sets a field in the project's stack.yaml to value"
                                cfgSetCmd
                                configCmdSetParser
                     addCommand ConfigCmd.cfgCmdAddName
-                               "Set the field to the value"
+                               "Adds a package or extra-dep to the project's stack.yaml"
                                cfgAddCmd
                                configCmdAddParser)
              addSubCommands
@@ -910,7 +910,6 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
 
 cfgGetCmd :: ConfigCmd.ConfigCmdGet -> GlobalOpts -> IO ()
 cfgGetCmd co go@GlobalOpts{..} = do
-    (manager,lc) <- liftIO $ loadConfigWithOpts go
     withBuildConfigAndLock
         go
         (\_ -> do env <- ask
@@ -920,7 +919,6 @@ cfgGetCmd co go@GlobalOpts{..} = do
 
 cfgSetCmd :: ConfigCmd.ConfigCmdSet -> GlobalOpts -> IO ()
 cfgSetCmd co go@GlobalOpts{..} = do
-    (manager,lc) <- liftIO $ loadConfigWithOpts go
     withBuildConfigAndLock
         go
         (\_ -> do env <- ask
