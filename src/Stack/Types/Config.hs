@@ -55,6 +55,7 @@ import qualified Paths_stack as Meta
 import           Stack.Types.BuildPlan (SnapName, renderSnapName, parseSnapName)
 import           Stack.Types.Compiler
 import           Stack.Types.Docker
+import           Stack.Types.ExecEnv
 import           Stack.Types.FlagName
 import           Stack.Types.Image
 import           Stack.Types.PackageIdentifier
@@ -74,6 +75,8 @@ data Config =
          -- ^ Path to user configuration file (usually ~/.stack/config.yaml)
          ,configDocker              :: !DockerOpts
          -- ^ Docker configuration
+         ,configExecEnv             :: !ExecEnvOpts
+         -- ^ Execution environment (e.g nix-shell) configuration
          ,configEnvOverride         :: !(EnvSettings -> IO EnvOverride)
          -- ^ Environment variables to be passed to external tools
          ,configLocalProgramsBase   :: !(Path Abs Dir)
@@ -565,6 +568,8 @@ data ConfigMonoid =
   ConfigMonoid
     { configMonoidDockerOpts         :: !DockerOptsMonoid
     -- ^ Docker options.
+    , configMonoidExecEnvOpts        :: !ExecEnvOptsMonoid
+    -- ^ Options for the execution environment (nix-shell or container)
     , configMonoidConnectionCount    :: !(Maybe Int)
     -- ^ See: 'configConnectionCount'
     , configMonoidHideTHLoading      :: !(Maybe Bool)
@@ -631,6 +636,7 @@ data ConfigMonoid =
 instance Monoid ConfigMonoid where
   mempty = ConfigMonoid
     { configMonoidDockerOpts = mempty
+    , configMonoidExecEnvOpts = mempty
     , configMonoidConnectionCount = Nothing
     , configMonoidHideTHLoading = Nothing
     , configMonoidLatestSnapshotUrl = Nothing
@@ -664,6 +670,7 @@ instance Monoid ConfigMonoid where
     }
   mappend l r = ConfigMonoid
     { configMonoidDockerOpts = configMonoidDockerOpts l <> configMonoidDockerOpts r
+    , configMonoidExecEnvOpts = configMonoidExecEnvOpts l <> configMonoidExecEnvOpts r
     , configMonoidConnectionCount = configMonoidConnectionCount l <|> configMonoidConnectionCount r
     , configMonoidHideTHLoading = configMonoidHideTHLoading l <|> configMonoidHideTHLoading r
     , configMonoidLatestSnapshotUrl = configMonoidLatestSnapshotUrl l <|> configMonoidLatestSnapshotUrl r
@@ -706,6 +713,7 @@ instance FromJSON (ConfigMonoid, [JSONWarning]) where
 parseConfigMonoidJSON :: Object -> WarningParser ConfigMonoid
 parseConfigMonoidJSON obj = do
     configMonoidDockerOpts <- jsonSubWarnings (obj ..:? "docker" ..!= mempty)
+    configMonoidExecEnvOpts <- jsonSubWarnings (obj ..:? "nix-shell" ..!= mempty)
     configMonoidConnectionCount <- obj ..:? "connection-count"
     configMonoidHideTHLoading <- obj ..:? "hide-th-loading"
     configMonoidLatestSnapshotUrl <- obj ..:? "latest-snapshot-url"

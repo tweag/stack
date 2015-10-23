@@ -55,6 +55,7 @@ import           Stack.Coverage
 import qualified Stack.Docker as Docker
 import           Stack.Dot
 import           Stack.Exec
+import qualified Stack.ExecEnv.NixShell as Nix
 import           Stack.Fetch
 import           Stack.FileWatch
 import           Stack.GhcPkg (getGlobalDB, mkGhcPackagePath)
@@ -519,7 +520,7 @@ setupParser = SetupCmdOpts
             )
     <*> (optional $ strOption
             (long "ghc-bindist"
-           <> metavar "URL"
+             <> metavar "URL"
            <> help "Alternate GHC binary distribution (requires custom --ghc-variant)"
             ))
   where
@@ -701,11 +702,18 @@ withBuildConfigExt go@GlobalOpts{..} mbefore inner mafter = do
                   go
                   (inner' lk)
 
+      reexecFn <- case execEnvType (configExecEnv (lcConfig lc)) of
+                    Just NixShellExecEnv -> do
+                         -- for now we bypass docker if nix-shell is on
+                         resolver <- bcResolver <$> (runStackLoggingTGlobal manager go $
+                                                      lcLoadBuildConfig lc globalResolver)
+                         return $ Nix.reexecWithShell resolver
+                    _ -> return Docker.reexecWithOptionalContainer
       runStackTGlobal manager (lcConfig lc) go $
-         Docker.reexecWithOptionalContainer (lcProjectRoot lc) mbefore (inner'' lk0) mafter
-                                            (Just $ liftIO $
-                                             do lk' <- readIORef curLk
-                                                munlockFile lk')
+        reexecFn (lcProjectRoot lc) mbefore (inner'' lk0) mafter
+                 (Just $ liftIO $
+                      do lk' <- readIORef curLk
+                         munlockFile lk')
 
 cleanCmd :: () -> GlobalOpts -> IO ()
 cleanCmd () go = withBuildConfigAndLock go (\_ -> clean)
