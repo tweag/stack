@@ -111,7 +111,7 @@ runShellAndExit getCmdArgs = do
            Nothing -> ["-E", intercalate " " $ concat
                               [["with (import <nixpkgs> {});"
                                ,"runCommand \"myEnv\" {"
-                               ,"buildInputs=lib.optional stdenv.isLinux glibcLocales ++ lib.optional stdenv.isDarwin darwin.cf-private ++ ["],pkgsInConfig,["];"
+                               ,"buildInputs=lib.optional stdenv.isLinux glibcLocales ++ lib.optionals stdenv.isDarwin [darwin.security_tool] ++ ["],pkgsInConfig,["];"
                                ,"shellHook=''"
                                ,   "STACK_IN_NIX_EXTRA_ARGS='"]
                                ,      (map (\p -> concat ["--extra-lib-dirs=", "${"++p++"}/lib"
@@ -120,7 +120,7 @@ runShellAndExit getCmdArgs = do
                                ,"'';"
                                ,"} \"\""]]]
                     -- glibcLocales is necessary on Linux to avoid warnings about GHC being incapable to set the locale.
-         fullArgs = concat [ -- ["--pure"],
+         fullArgs = concat [["--pure"],
                             map T.unpack (nixShellOptions (configNix config))
                            ,nixopts
                            ,["--command", ("export " ++ inShellEnvVar ++ "=1 ; ")
