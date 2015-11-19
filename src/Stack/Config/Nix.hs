@@ -11,12 +11,12 @@ import Stack.Types
 nixOptsFromMonoid :: Monad m => Maybe Project -> Path Abs Dir -> NixOptsMonoid -> m NixOpts
 nixOptsFromMonoid mproject _stackRoot NixOptsMonoid{..} = do
     let nixEnable = fromMaybe nixMonoidDefaultEnable nixMonoidEnable
-        nixPackages = case mproject of
-           Nothing -> nixMonoidPackages
-           Just p -> nixMonoidPackages ++ [case projectResolver p of
+        nixPackages = nixMonoidPackages {-++ case mproject of
+           Nothing -> []
+           Just p -> [case projectResolver p of
               ResolverSnapshot (LTS x y) ->
                 "haskell.packages.lts-" ++ show x ++ "_" ++ show y ++ ".ghc"
-              _ -> "ghc"]
+              _ -> "ghc"]-}
         nixInitFile = nixMonoidInitFile
         nixShellOptions = nixMonoidShellOptions
     return NixOpts{..}
